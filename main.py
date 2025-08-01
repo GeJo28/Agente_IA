@@ -13,12 +13,9 @@ prompt_template = '''
 Responda a pergunta do usuário:
 {pergunta}
 
-com base nessas informações:
+com base nessas informações abaixo:
 
 {base_conhecimento}
-
-Se você não encontrar a resposta para a pergunta do usuário nessas informações,
-responda não sei te dizer isso
 '''
 def perguntar():
     pergunta = input("Escreva sua pergunta: ")
@@ -28,7 +25,7 @@ def perguntar():
     db = Chroma(persist_directory=CAMINHO_DB, embedding_function=funcao_embedding)
 
     # Comparar a pergunta do usuário (vetorizada) com o meu banco de dados
-    resultados = db.similarity_search_with_relevance_scores(pergunta, k=3)
+    resultados = db.similarity_search_with_relevance_scores(pergunta, k=4)
     if len(resultados) == 0 and resultados[0][1] < 0.7:
         print("Não consegui encontrar alguma informação relevante na base")
         return
