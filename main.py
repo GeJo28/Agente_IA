@@ -9,7 +9,11 @@ import pyttsx3
 CAMINHO_DB = 'database'
 engine = pyttsx3.init()
 
+
 prompt_template = '''
+Histórico da conversa:
+{lista_mensagens}
+
 Responda a pergunta do usuário:
 {pergunta}
 
@@ -17,8 +21,21 @@ com base nessas informações abaixo:
 
 {base_conhecimento}
 '''
-def perguntar():
-    pergunta = input("Escreva sua pergunta: ")
+
+def function_messages(lista_mensagens):
+    texto = ''
+    for mensagem in lista_mensagens:
+        if mensagem['role'] == 'user':
+            texto += f'Usuário: {mensagem['content']}\n'
+        else:
+            texto += f'Assistente: {mensagem['content']}\n'
+    
+    return texto
+
+def perguntar(pergunta, lista_mensagens=[]):
+    lista_mensagens.append(
+            {'role': 'user', 'content': pergunta}
+            )
 
     # Carregar o banco de dados
     funcao_embedding = OllamaEmbeddings(model='llama3')
@@ -37,13 +54,25 @@ def perguntar():
     
     base_conhecimento = "\n\n----\n\n".join(textos_resultado)
     prompt = ChatPromptTemplate.from_template(prompt_template)
-    prompt = prompt.invoke({'pergunta': pergunta, 'base_conhecimento': base_conhecimento})
+    prompt = prompt.invoke({'pergunta': pergunta, 'base_conhecimento': base_conhecimento, 'lista_mensagens': function_messages(lista_mensagens)})
 
     # Gerando a resposta atravéz da IA
     modelo = ChatOllama(model='llama3')
     texto_resposta = modelo.invoke(prompt).content
-    print(f"Resposta da IA: {texto_resposta}")
-    engine.say(texto_resposta)
-    engine.runAndWait()
+    return texto_resposta
+    
 
-perguntar()
+lista_mensagens = []
+while True:
+    pergunta = input("Escreva sua pergunta: ")
+
+    if pergunta == 'sair':
+        break
+    else:
+        resposta = perguntar(pergunta, lista_mensagens)
+        lista_mensagens.append(
+            {'role': 'assistant', 'content': resposta}
+            )
+        print(f"Resposta da IA: {resposta}")
+        engine.say(resposta)
+        engine.runAndWait()
